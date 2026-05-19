@@ -1,0 +1,55 @@
+#include <iic_manager.h>
+
+void setupI2C() {
+  Wire.begin();
+  Serial.println("\nI2C Scanner");
+}
+
+void scanForI2CDevices() {
+  byte error, address;
+  int nDevices;
+  Serial.println("Scanning...");
+  nDevices = 0;
+  for (address = 1; address < 127; address++) {
+    Wire.beginTransmission(address);
+    error = Wire.endTransmission();
+    if (error == 0) {
+      Serial.print("I2C device found at address 0x");
+      if (address < 16) {
+        Serial.print("0");
+      }
+      Serial.println(address, HEX);
+      nDevices++;
+    } else if (error == 4) {
+      Serial.print("Unknow error at address 0x");
+      if (address < 16) {
+        Serial.print("0");
+      }
+      Serial.println(address, HEX);
+    }
+  }
+  if (nDevices == 0) {
+    Serial.println("No I2C devices found\n");
+  } else {
+    Serial.println("done\n");
+  }
+  delay(5000);
+}
+
+void sendMessageFromSerial(byte address) {
+  while (Serial.available()) {
+
+    char msg = Serial.read();
+
+    Wire.beginTransmission(address);
+    Wire.write(msg);
+
+    byte error = Wire.endTransmission();
+
+    Serial.print("Sent: ");
+    Serial.println(msg);
+
+    Serial.print("I2C Error Code: ");
+    Serial.println(error);
+  }
+}
