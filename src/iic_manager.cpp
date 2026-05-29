@@ -1,55 +1,60 @@
 #include <iic_manager.h>
 
+uint8_t slaveCount = 0;
+uint8_t slaveList[112]; // max possible I2C slaves
+
 void setupI2C() {
-  Wire.begin();
-  Serial.println("\nI2C Scanner");
+  Wire.begin(I2C_SDA, I2C_SCL);
+  Wire.setClock(I2C_FREQ);
 }
 
-void scanForI2CDevices() {
-  byte error, address;
-  int nDevices;
-  Serial.println("Scanning...");
-  nDevices = 0;
-  for (address = 1; address < 127; address++) {
-    Wire.beginTransmission(address);
-    error = Wire.endTransmission();
-    if (error == 0) {
-      Serial.print("I2C device found at address 0x");
-      if (address < 16) {
-        Serial.print("0");
-      }
-      Serial.println(address, HEX);
-      nDevices++;
-    } else if (error == 4) {
-      Serial.print("Unknow error at address 0x");
-      if (address < 16) {
-        Serial.print("0");
-      }
-      Serial.println(address, HEX);
+// ─────────────────────────────────────────────────────────────
+// I2C SCAN
+// ─────────────────────────────────────────────────────────────
+void scanI2C() {
+  slaveCount = 0;
+  cursorIndex = 0;
+  scrollOffset = 0;
+
+  lcd.clear();
+  lcd.setCursor(0, 0);
+  lcd.print("Scanning I2C bus...");
+
+  for (uint8_t addr = SCAN_START; addr <= SCAN_END; addr++) {
+    Wire.beginTransmission(addr);
+    uint8_t err = Wire.endTransmission();
+    if (err == 0) {
+      slaveList[slaveCount++] = addr;
     }
+    // small yield to prevent WDT on long scans
+    if (addr % 16 == 0)
+      delay(1);
   }
-  if (nDevices == 0) {
-    Serial.println("No I2C devices found\n");
-  } else {
-    Serial.println("done\n");
-  }
-  delay(5000);
+
+  drawScreen();
 }
 
-void sendMessageFromSerial(byte address) {
-  while (Serial.available()) {
+// ─────────────────────────────────────────────────────────────
+// SEND BLINK COMMAND
+// ─────────────────────────────────────────────────────────────
+void sendBlink(uint8_t addr) {
+  Wire.beginTransmission(addr);
+  Wire.write(CMD_BLINK);
+  uint8_t err = Wire.endTransmission();
 
-    char msg = Serial.read();
-
-    Wire.beginTransmission(address);
-    Wire.write(msg);
-
-    byte error = Wire.endTransmission();
-
-    Serial.print("Sent: ");
-    Serial.println(msg);
-
-    Serial.print("I2C Error Code: ");
-    Serial.println(error);
+  // brief feedback on LCD row 0
+  lcd.setCursor(0, 0);
+  if (err == 0) {
+    lcd.print("CMD sent → 0x");
+    if (addr < 0x10)
+      lcd.print("0");
+    lcd.print(addr, HEX);
+    lcd.print("   ");
+  } else {
+    lcd.print("Send failed (err:");
+    lcd.print(err);
+    lcd.print(")  ");
   }
+  delay(BLINK_FEEDBACK_MS);
+  drawHeader();
 }

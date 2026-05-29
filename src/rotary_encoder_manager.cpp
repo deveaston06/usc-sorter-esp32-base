@@ -1,48 +1,90 @@
 #include <rotary_encoder_manager.h>
 
-// Variables to store the encoder state
-int lastClkState;
-unsigned long lastButtonPress = 0;
+int8_t cursorIndex = 0;  // which slave is highlighted
+int8_t scrollOffset = 0; // top of visible window (rows 1-3 = 3 visible)
+
+// encoder state
+volatile int encDelta = 0;
+int lastCLK = HIGH;
+
+// button state
+bool lastBtnState = HIGH;
+uint32_t btnPressTime = 0;
+bool btnHoldFired = false;
 
 void setupEncoder() {
-  // Set encoder pins as inputs
-  pinMode(ENCODER_CLK, INPUT);
-  pinMode(ENCODER_DT, INPUT);
-  // Use internal pull-up resistor for the switch button
-  pinMode(ENCODER_SW, INPUT_PULLUP);
-
-  // Read the initial state of CLK
-  lastClkState = digitalRead(ENCODER_CLK);
+  pinMode(ENC_CLK, INPUT_PULLUP);
+  pinMode(ENC_DT, INPUT_PULLUP);
+  pinMode(ENC_SW, INPUT_PULLUP);
+  lastCLK = digitalRead(ENC_CLK);
 }
 
-void readEncoderAndScroll() {
-  int currentClkState = digitalRead(ENCODER_CLK);
-
-  // Check if the CLK state has changed (rotation occurred)
-  if (currentClkState != lastClkState) {
-
-    // If the DT state is different than the CLK state,
-    // it means the encoder is rotating Counter-Clockwise (CCW)
-    if (digitalRead(ENCODER_DT) != currentClkState) {
-      lcdScrollForward();
+void readEncoder() {
+  int clkState = digitalRead(ENC_CLK);
+  if (clkState != lastCLK && clkState == LOW) {
+    if (digitalRead(ENC_DT) != clkState) {
+      encDelta++;
+    } else {
+      encDelta--;
     }
-    // Else, the encoder is rotating Clockwise (CW)
-    else {
-      lcdScrollBackward();
+  }
+  lastCLK = clkState;
+}
+
+void handleEncoder() {
+  if (encDelta == 0)
+    return;
+
+  int move = encDelta;
+  encDelta = 0;
+
+  if (slaveCount == 0)
+    return;
+
+  cursorIndex += move;
+
+  // clamp
+  if (cursorIndex < 0)
+    cursorIndex = 0;
+  if (cursorIndex >= slaveCount)
+    cursorIndex = slaveCount - 1;
+
+  // adjust scroll window (3 visible rows)
+  if (cursorIndex < scrollOffset) {
+    scrollOffset = cursorIndex;
+  }
+  if (cursorIndex >= scrollOffset + 3) {
+    scrollOffset = cursorIndex - 2;
+  }
+
+  drawScreen();
+}
+
+void handleButton() {
+  bool btnState = digitalRead(ENC_SW);
+
+  // button pressed (active LOW)
+  if (btnState == LOW && lastBtnState == HIGH) {
+    btnPressTime = millis();
+    btnHoldFired = false;
+    delay(DEBOUNCE_MS);
+  }
+
+  // button held
+  if (btnState == LOW && !btnHoldFired) {
+    if (millis() - btnPressTime >= HOLD_MS) {
+      btnHoldFired = true;
+      scanI2C();
     }
   }
 
-  // Save the current CLK state for the next loop pass
-  lastClkState = currentClkState;
-
-  // Optional: Handle the SW (Switch) button press
-  if (digitalRead(ENCODER_SW) == LOW) {
-    // Simple software debounce
-    if (millis() - lastButtonPress > 300) {
-      // Action when button is pressed (e.g., clear or reset position)
-      // For now, it just prints a debug message to Serial
-      Serial.println("Encoder Button Pressed!");
-      lastButtonPress = millis();
+  // button released
+  if (btnState == HIGH && lastBtnState == LOW) {
+    if (!btnHoldFired && slaveCount > 0) {
+      sendBlink(slaveList[cursorIndex]);
     }
+    delay(DEBOUNCE_MS);
   }
+
+  lastBtnState = btnState;
 }
