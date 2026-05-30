@@ -10,20 +10,20 @@
  *     VSS → GND
  *     VDD → 5V
  *     VO  → potentiometer wiper (contrast)
- *     RS  → GPIO 19
+ *     RS  → GPIO 12
  *     RW  → GND
- *     EN  → GPIO 18
- *     D4  → GPIO 5
- *     D5  → GPIO 17
- *     D6  → GPIO 16
- *     D7  → GPIO 4
+ *     EN  → GPIO 13
+ *     D4  → GPIO 14
+ *     D5  → GPIO 25
+ *     D6  → GPIO 26
+ *     D7  → GPIO 27
  *     A   → 5V via 220Ω (backlight)
  *     K   → GND (backlight)
  *
  *   KY040 Rotary Encoder
- *     CLK → GPIO 34
- *     DT  → GPIO 35
- *     SW  → GPIO 32
+ *     CLK → GPIO 5
+ *     DT  → GPIO 18
+ *     SW  → GPIO 19
  *     VCC → 3.3V
  *     GND → GND
  *
