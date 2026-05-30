@@ -15,10 +15,16 @@
 #define LCD_COLS 20
 #define LCD_ROWS 4
 
+#define CHAR_ARROW_UP 0
+#define CHAR_ARROW_DOWN 1
+#define CHAR_ARROW_RIGHT 2
+#define CHAR_CURSOR 3
+
 extern LiquidCrystal lcd;
 
 void setupLCD();
 void drawScreen();
 void drawHeader();
+void clearRow(uint8_t row);
 
 #endif // !LCD_MANAGER_H

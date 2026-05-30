@@ -10,7 +10,6 @@
 
 #define DEBOUNCE_MS 50
 #define HOLD_MS 1000
-#define BLINK_FEEDBACK_MS 300
 
 extern int8_t cursorIndex;  // which slave is highlighted
 extern int8_t scrollOffset; // top of visible window (rows 1-3 = 3 visible)

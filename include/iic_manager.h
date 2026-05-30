@@ -12,6 +12,8 @@
 #define SCAN_START 0x08
 #define SCAN_END 0x77
 
+#define BLINK_FEEDBACK_MS 300
+
 extern uint8_t slaveCount;
 extern uint8_t slaveList[112]; // max possible I2C slaves
 

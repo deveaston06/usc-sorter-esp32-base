@@ -43,9 +43,11 @@ void sendBlink(uint8_t addr) {
   uint8_t err = Wire.endTransmission();
 
   // brief feedback on LCD row 0
-  lcd.setCursor(0, 0);
+  clearRow(0);
   if (err == 0) {
-    lcd.print("CMD sent → 0x");
+    lcd.print("CMD sent ");
+    lcd.write(char(CHAR_ARROW_RIGHT));
+    lcd.print(" 0x");
     if (addr < 0x10)
       lcd.print("0");
     lcd.print(addr, HEX);
