@@ -4,9 +4,9 @@
 #include <Arduino.h>
 #include <lcd_manager.h>
 
-#define ENC_CLK 5
+#define ENC_CLK 19
 #define ENC_DT 18
-#define ENC_SW 19
+#define ENC_SW 17
 
 #define DEBOUNCE_MS 50
 #define HOLD_MS 1000

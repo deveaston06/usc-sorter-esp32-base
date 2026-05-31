@@ -7,6 +7,7 @@
 
 #define I2C_SDA 21
 #define I2C_SCL 22
+#define ALERT 23
 #define I2C_FREQ 100000
 #define CMD_BLINK 0x01
 #define SCAN_START 0x08

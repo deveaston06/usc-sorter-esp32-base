@@ -32,13 +32,12 @@ void readEncoder() {
 }
 
 void handleEncoder() {
-  if (encDelta == 0)
-    return;
-
+  noInterrupts();
   int move = encDelta;
   encDelta = 0;
+  interrupts();
 
-  if (slaveCount == 0)
+  if (move == 0 || slaveCount == 0)
     return;
 
   cursorIndex += move;
@@ -62,28 +61,30 @@ void handleEncoder() {
 
 void handleButton() {
   bool btnState = digitalRead(ENC_SW);
+  uint32_t now = millis();
 
-  // button pressed (active LOW)
+  // press detect
   if (btnState == LOW && lastBtnState == HIGH) {
-    btnPressTime = millis();
+    btnPressTime = now;
     btnHoldFired = false;
-    delay(DEBOUNCE_MS);
   }
 
-  // button held
+  // hold detect
   if (btnState == LOW && !btnHoldFired) {
-    if (millis() - btnPressTime >= HOLD_MS) {
+    if (now - btnPressTime >= HOLD_MS) {
       btnHoldFired = true;
+      encDelta = 0; // discard any encoder movement during hold
       scanI2C();
     }
   }
 
-  // button released
+  // release detect
   if (btnState == HIGH && lastBtnState == LOW) {
-    if (!btnHoldFired && slaveCount > 0) {
+    if ((now - btnPressTime >= DEBOUNCE_MS) && !btnHoldFired &&
+        slaveCount > 0) {
+      encDelta = 0; // discard encoder noise during button interaction
       sendBlink(slaveList[cursorIndex]);
     }
-    delay(DEBOUNCE_MS);
   }
 
   lastBtnState = btnState;
